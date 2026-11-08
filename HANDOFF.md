@@ -1,4 +1,4 @@
-# Crate Escape: handoff
+# BoxPuzzle: handoff
 
 ## Game
 Sliding-crate puzzle (single HTML file, vanilla JS, no build). Colored crates in a fenced grid
