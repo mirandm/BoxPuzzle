@@ -293,18 +293,25 @@ function startJob(tier){
  job=j;return j.promise;}
 function pregenerate(t){const nx=store.get('next',null);if(nx&&nx.tier===t)return;
  startJob(t).then(y=>{if(!yardData||y.uid!==yardData.uid)store.set('next',{tier:t,yard:y});});}
+let pending=false;
 function needYard(t){
+ if(pending)return;
  const nx=store.get('next',null);
  if(nx&&nx.tier===t){store.set('next',null);loadYard(nx.yard);return;}
- L=null;moves=0;history=[];board.innerHTML='';yard.hidden=true;$('gen').hidden=false;updateHud();
- $('lvname').innerHTML=`Level ${t+1} · yard ${cleared%5+1} of 5<small>Building a fresh yard…</small>`;
- $('genTitle').textContent=`Building level ${t+1} · yard ${cleared%5+1}`;
+ pending=true;
  const p=startJob(t);
+ // only show the builder card if the wait is noticeable; quick builds just swap the yard in
+ let shown=false,tick;
  const show=j=>{const el=Date.now()-j.t0,tr=Object.values(j.tried).reduce((a,b)=>a+b,0),sv=Object.values(j.solvable).reduce((a,b)=>a+b,0);
   $('genBar').style.width=Math.min(97,8+92*(1-Math.exp(-el/7000))).toFixed(1)+'%';
   $('genText').textContent=tr?`Stacking crates and checking each layout can be cleared… ${tr} layout${tr>1?'s':''} tried, ${sv} solvable.`:'Laying out the lot…';};
- if(job){job.listeners.add(show);show(job);const tick=setInterval(()=>job&&show(job),250);p.then(()=>clearInterval(tick));}
- p.then(y=>{$('genBar').style.width='100%';setTimeout(()=>loadYard(y),job?0:120);});}
+ const timer=setTimeout(()=>{shown=true;
+  L=null;moves=0;history=[];board.innerHTML='';yard.hidden=true;$('gen').hidden=false;updateHud();
+  $('lvname').innerHTML=`Level ${t+1} · yard ${cleared%5+1} of 5<small>Building a fresh yard…</small>`;
+  $('genTitle').textContent=`Building level ${t+1} · yard ${cleared%5+1}`;
+  if(job){job.listeners.add(show);show(job);tick=setInterval(()=>job&&show(job),250);}},500);
+ p.then(y=>{clearTimeout(timer);clearInterval(tick);pending=false;
+  if(shown){$('genBar').style.width='100%';setTimeout(()=>loadYard(y),150);}else loadYard(y);});}
 
 const saved=store.get('yard',null);
 if(saved&&saved.tier===Math.min(tierFor(cleared),(self.BoxEngine?BoxEngine.TIERS.length:99)-1))loadYard(saved);else needYard(tierFor(cleared));
