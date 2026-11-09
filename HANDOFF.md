@@ -11,9 +11,9 @@ dragged cell by cell until blocked.
 - Each gate is exactly as wide as the largest crate of its color, measured along the gate
   (top/bottom gates = crate width, side gates = crate height). Smaller crates of that color
   fit with slack. Gates never overlap; a color without crates has no gate.
-- Crates on rails: field "lock":"v" or "h", can only slide along that axis (from yard 5 on),
+- Crates on rails: field "lock":"v" or "h", can only slide along that axis (from level 2 on),
   shown with arrows at the ends.
-- Padlocked crates: field "key":"<color>" (from yard 54 on). A padlocked crate cannot move or exit
+- Padlocked crates: field "key":"<color>" (from level 3 on). A padlocked crate cannot move or exit
   until every crate of the key color has left. Shown hatched with a padlock badge in the key color
   (with that color's glyph); the badge drops away when it opens. Padlock chains never loop.
 - 6 colors (r, b, y, g, p, t=teal), each with a shape glyph for colorblind play.
