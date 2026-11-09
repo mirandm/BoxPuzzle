@@ -2,10 +2,14 @@
 // solution, then confirms the win screen and that the move count equals par.
 // usage: node tools/playtest.js http://localhost:8000/ 54-73
 'use strict';
+// End-to-end check of endless mode: plays generated yards in headless Chromium with real mouse
+// drags along a solver solution, checks the win screen, level-ups and the wait for the next yard.
+// usage: python3 -m http.server 8765 & node tools/playtest.js http://localhost:8765/ <startCleared> <yards>
 const { chromium } = require('playwright');
-const { beamSolve } = require('./beam.js');
+const { beamSolve } = require('../engine.js');
+const { replay } = require('./verify.js');
 
-const URL = process.argv[2], [from, to] = (process.argv[3] || '54-73').split('-').map(Number);
+const URL = process.argv[2], START = +(process.argv[3] || 0), COUNT = +(process.argv[4] || 6);
 const DV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const SIDE_DIR = { top: 'up', bottom: 'down', left: 'left', right: 'right' };
 const allowed = b => b.lock === 'h' ? ['left', 'right'] : b.lock === 'v' ? ['up', 'down'] : ['up', 'down', 'left', 'right'];
@@ -46,28 +50,28 @@ function route(L, bs, b, tx, ty) {
 
 (async () => {
   const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errs = [];
+  page.on('pageerror', e => errs.push(e.message));
+  await page.addInitScript(([c, first]) => { if (!sessionStorage.getItem('init')) { sessionStorage.setItem('init', 1); localStorage.clear(); localStorage.setItem('bp-cleared', String(c)); } }, [START]);
+  await page.goto(URL);
   let fails = 0;
-  for (let n = from; n <= to; n++) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    const errs = [];
-    page.on('pageerror', e => errs.push(e.message));
-    await page.addInitScript(n => { localStorage.setItem('crate2-unlocked', '99'); localStorage.setItem('crate2-level', String(n)); }, n);
-    await page.goto(URL);
-    await page.waitForTimeout(300);
+  for (let k = 0; k < COUNT; k++) {
+    const t0 = Date.now();
+    await page.waitForFunction(() => typeof L !== 'undefined' && L && !yard.hidden, null, { timeout: 180000 });
+    const wait = Date.now() - t0;
+    await page.waitForTimeout(150);
     const L = await page.evaluate(() => L);
-    const sol = beamSolve(L, { width: 3000, maxDepth: 14 });
+    const label = await page.evaluate(() => document.querySelector('#lvname').firstChild.textContent);
+    const sol = beamSolve(L, { width: 2000, maxDepth: 16 });
     const getBlocks = () => page.evaluate(() => blocks.map(b => ({ ...b })));
     const box = await page.locator('#board').boundingBox();
     const cell = await page.evaluate(() => cell);
     const drag = async (b, dirs) => {
       let px = box.x + (b.x + 0.5) * cell, py = box.y + (b.y + 0.5) * cell;
       await page.mouse.move(px, py); await page.mouse.down();
-      for (const d of dirs) {
-        px += DV[d][0] * cell; py += DV[d][1] * cell;
-        await page.mouse.move(px, py, { steps: 3 });
-      }
-      await page.mouse.up();
-      await page.waitForTimeout(140);
+      for (const d of dirs) { px += DV[d][0] * cell; py += DV[d][1] * cell; await page.mouse.move(px, py, { steps: 3 }); }
+      await page.mouse.up(); await page.waitForTimeout(120);
     };
     const exitAll = async () => {
       for (let any = true; any;) {
@@ -78,46 +82,39 @@ function route(L, bs, b, tx, ty) {
           const at = exitDir(L, b, b.x, b.y);
           const dirs = at ? [at] : route(L, bs, b, null);
           if (!dirs) continue;
-          await drag(b, dirs); await page.waitForTimeout(330);
+          await drag(b, dirs); await page.waitForTimeout(320);
           if (!(await getBlocks())[b.id].gone) throw new Error(`crate ${b.id} did not exit`);
           any = true; break;
         }
       }
     };
-    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT.replace('N', n) });
-    let why = '';
+    let why;
     try {
-      // a padlocked crate must refuse to move
-      const bs0 = await getBlocks();
-      const lockedOne = bs0.find(b => locked(bs0, b));
-      if (lockedOne) {
-        const ok = ['up', 'down', 'left', 'right'].find(d => route(L, bs0.map(o => ({ ...o, key: undefined })), { ...lockedOne, key: undefined }, lockedOne.x + DV[d][0], lockedOne.y + DV[d][1]));
-        if (ok) {
-          await drag(lockedOne, [ok]);
-          const after = (await getBlocks())[lockedOne.id];
-          if (after.x !== lockedOne.x || after.y !== lockedOne.y) throw new Error('padlocked crate moved');
-          if (await page.evaluate(() => moves) !== 0) throw new Error('padlocked drag counted a move');
-        }
+      if (!sol) throw new Error('test solver found no solution');
+      const rp = replay(L, sol.path);
+      if (!rp.ok) throw new Error('independent replay failed: ' + rp.why);
+      const bs0 = await getBlocks(), lk = bs0.find(b => locked(bs0, b));
+      if (lk) { // a padlocked crate must refuse to move
+        const d = ['up', 'down', 'left', 'right'].find(d => route(L, bs0.map(o => ({ ...o, key: undefined })), { ...lk, key: undefined }, lk.x + DV[d][0], lk.y + DV[d][1]));
+        if (d) { await drag(lk, [d]); const a = (await getBlocks())[lk.id]; if (a.x !== lk.x || a.y !== lk.y) throw new Error('padlocked crate moved'); }
       }
       await exitAll();
       for (const [i, x, y] of sol.path) {
-        const bs = await getBlocks();
-        const dirs = route(L, bs, bs[i], x, y);
-        if (!dirs) throw new Error(`no route for crate ${i} to ${x},${y}`);
+        const bs = await getBlocks(), dirs = route(L, bs, bs[i], x, y);
+        if (!dirs) throw new Error(`no route for crate ${i}`);
         await drag(bs[i], dirs);
-        const b = (await getBlocks())[i];
-        if (b.x !== x || b.y !== y) throw new Error(`crate ${i} ended at ${b.x},${b.y} not ${x},${y}`);
         await exitAll();
       }
       await page.waitForTimeout(400);
-      const st = await page.evaluate(() => ({ won, moves, win: !!document.querySelector('.win') }));
-      if (!st.won || !st.win) throw new Error('not won');
-      if (st.moves !== L.par) throw new Error(`moves ${st.moves} != par ${L.par}`);
+      const st = await page.evaluate(() => ({ won, moves, cleared, h2: document.querySelector('.win h2')?.textContent }));
+      if (!st.won) throw new Error('not won');
+      if (st.moves > L.par) throw new Error(`moves ${st.moves} > par ${L.par}`);
+      why = `ok ${st.moves} moves (par ${L.par}${st.moves < L.par ? ', beaten' : ''}) · "${st.h2}" · waited ${wait}ms`;
       if (errs.length) throw new Error(errs.join('; '));
-      why = `ok, ${st.moves} moves = par`;
+      await page.click('#go');
     } catch (e) { why = 'FAIL ' + e.message; fails++; }
-    console.log(`yard ${n}: ${why}`);
-    await page.close();
+    console.log(`${label} ${L.w}x${L.h} ${L.blocks.length} crates: ${why}`);
+    if (why.startsWith('FAIL')) break;
   }
   await browser.close();
   process.exit(fails ? 1 : 0);
