@@ -15,7 +15,7 @@
   --ground:#d9dde0; --ground-2:#cdd2d6; --ink:#20262b; --muted:#5d6870;
   --steel:#8f9aa3; --steel-2:#6f7a83; --panel:#eef0f2; --line:#bcc3c9;
   --hazard:#f2b632; --hazard-ink:#20262b;
-  --c-r:#df4f39; --c-b:#2c7bd0; --c-y:#f0b42c; --c-g:#3a9f66; --c-p:#8757d3;
+  --c-r:#e85d1c; --c-b:#3a8fe8; --c-y:#f4d000; --c-g:#1f8a4c; --c-p:#4b3bc4; --c-t:#ec5ca8;
   --display:"Saira Stencil One", "Impact", "Arial Narrow", sans-serif;
   --body:"Barlow", "Segoe UI", system-ui, sans-serif;
 }
@@ -72,7 +72,10 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
 .hint{color:var(--muted);font-size:13px;line-height:1.45;max-width:60ch;margin:0}
 @media (prefers-reduced-motion: reduce){.crate,.crate.leaving{transition:none}.crate.bump{animation:none}}
 
-:root{--c-t:#1b9e9a}
+/* Yellow is light: its symbols are drawn dark for contrast */
+.k-y>svg,.gate.k-y svg{fill:rgba(32,38,43,.78)}
+.crate.k-y .ar{fill:rgba(32,38,43,.55)}
+.crate .pad .kg.dark{fill:#20262b}
 .crate .ar{position:absolute;width:calc(var(--cell)*.2);height:calc(var(--cell)*.2);fill:rgba(255,255,255,.8);pointer-events:none}
 .crate.lock-h .ar{top:50%;margin-top:calc(var(--cell)*-.1)}.crate.lock-h .a1{left:7%}.crate.lock-h .a2{right:7%}
 .crate.lock-v .ar{left:50%;margin-left:calc(var(--cell)*-.1)}.crate.lock-v .a1{top:7%}.crate.lock-v .a2{bottom:7%}
@@ -80,8 +83,9 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
 .win .btns{display:flex;gap:8px}
 /* Padlocks: hatched crate + a padlock badge in the key color; it opens once that color has left the yard */
 .crate.locked{cursor:not-allowed}
+/* padlocked crates keep their exact color (so colors never get confused); a light inner ring + the badge mark the lock */
 .crate.locked::after{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;
-  background:color-mix(in srgb,var(--ground-2) 50%,transparent)}
+  box-shadow:inset 0 0 0 4px rgba(255,255,255,.6)}
 .crate .pad{position:absolute;top:calc(var(--cell)*-.12);right:calc(var(--cell)*-.1);z-index:1;
   width:calc(var(--cell)*.46);height:calc(var(--cell)*.5);pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));
   transition:transform 220ms ease-in,opacity 220ms ease-in}
@@ -123,7 +127,7 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
   </div>
   <div class="stage" id="stage"><div class="yard" id="yard"><div class="board" id="board"></div></div>
     <div class="gen" id="gen" hidden><h2 id="genTitle">Building yard</h2><div class="bar"><i id="genBar"></i></div><p id="genText">Laying out the lot…</p></div></div>
-  <p class="hint">Drag a crate to slide it. Crates with arrows run on rails and only move along that line. Faded crates with a padlock are locked: they stay put until every crate of the padlock's color has left the yard. When a crate sits fully inside the opening of its own color's gate, it is pulled out. Every yard is freshly generated and checked solvable; par is the fewest moves the solver found (one move is one drag). Every 5 cleared yards the next level gets bigger and trickier.</p>
+  <p class="hint">Drag a crate to slide it. Crates with arrows run on rails and only move along that line. Crates with a white ring and a padlock are locked: they stay put until every crate of the padlock's color has left the yard. When a crate sits fully inside the opening of its own color's gate, it is pulled out. Every yard is freshly generated and checked solvable; par is the fewest moves the solver found (one move is one drag). Every 5 cleared yards the next level gets bigger and trickier.</p>
 </div>
 
 <script src="engine.js"></script>
@@ -142,7 +146,7 @@ const RAIL={h:'<svg class="ar a1" viewBox="0 0 10 10"><path d="M1 5 9 0v10z"/></
 function PAD(k){return `<div class="pad"><svg viewBox="0 0 24 27"><path d="M7 12V8.5a5 5 0 0 1 10 0V12" fill="none" stroke="#fff" stroke-width="5.5"/>`+
  `<path d="M7 12V8.5a5 5 0 0 1 10 0V12" fill="none" stroke="var(--c-${k})" stroke-width="2.6"/>`+
  `<rect x="2.5" y="11" width="19" height="15" rx="3.5" fill="var(--c-${k})" stroke="#fff" stroke-width="1.6"/>`+
- GLYPH[k].replace('<svg ','<svg class="kg" x="7.5" y="13" width="9" height="11" ')+`</svg></div>`;}
+ GLYPH[k].replace('<svg ',`<svg class="kg${k==='y'?' dark':''}" x="7.5" y="13" width="9" height="11" `)+`</svg></div>`;}
 function isLocked(b){return !!b.key&&blocks.some(o=>!o.gone&&o.c===b.key);}
 const store={get(k,d){try{const v=localStorage.getItem('bp-'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
  set(k,v){try{localStorage.setItem('bp-'+k,JSON.stringify(v))}catch(e){}}};
@@ -183,10 +187,10 @@ function layout(){
   const horiz=e.side==='top'||e.side==='bottom';g.style.setProperty('--chev',horiz?'90deg':'0deg');
   if(horiz){g.style.left=F+e.s*cell+'px';g.style.width=e.len*cell+'px';g.style.height=F+'px';g.style.top=e.side==='top'?'0':(L.h*cell+F)+'px';}
   else{g.style.top=F+e.s*cell+'px';g.style.height=e.len*cell+'px';g.style.width=F+'px';g.style.left=e.side==='left'?'0':(L.w*cell+F)+'px';}
-  g.innerHTML=GLYPH[e.color];yard.appendChild(g);}
+  g.classList.add('k-'+e.color);g.innerHTML=GLYPH[e.color];yard.appendChild(g);}
  for(const [x,y] of L.walls||[]){const w=document.createElement('div');w.className='wall';
   w.style.cssText=`left:${x*cell}px;top:${y*cell}px;width:${cell}px;height:${cell}px`;board.appendChild(w);}
- els=blocks.map(b=>{const d=document.createElement('div');d.className='crate'+(b.lock?' lock-'+b.lock:'');d.style.setProperty('--cc',`var(--c-${b.c})`);
+ els=blocks.map(b=>{const d=document.createElement('div');d.className='crate k-'+b.c+(b.lock?' lock-'+b.lock:'');d.style.setProperty('--cc',`var(--c-${b.c})`);
   d.style.width=b.w*cell-4+'px';d.style.height=b.h*cell-4+'px';d.innerHTML=GLYPH[b.c]+(b.lock?RAIL[b.lock]:'')+(b.key?PAD(b.key):'');
   d.addEventListener('pointerdown',ev=>startDrag(ev,b));board.appendChild(d);return d;});
  blocks.forEach(place);
