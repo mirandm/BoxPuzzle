@@ -14,10 +14,10 @@ dragged cell by cell until blocked.
 - Crates on rails: field "lock":"v" or "h", can only slide along that axis (from level 2 on),
   shown with arrows at the ends.
 - Padlocked crates: field "key":"<color>" (from level 3 on). A padlocked crate cannot move or exit
-  until every crate of the key color has left. Shown hatched with a padlock badge in the key color
+  until every crate of the key color has left. Shown faded with a padlock badge in the key color
   (with that color's glyph); the badge drops away when it opens. Padlock chains never loop.
 - 6 colors (r, b, y, g, p, t=teal), each with a shape glyph for colorblind play.
-- Walls = hazard-striped blocked cells.
+- Walls = plain dark blocked cells. Flat look: no grid lines, stripes or hatching on the board.
 - One drag = one move. Undo, restart, move counter, best per yard.
 - Progress in localStorage, prefix "crate2-".
 

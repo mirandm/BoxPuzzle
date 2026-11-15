@@ -50,34 +50,18 @@ button:focus-visible{outline:3px solid var(--hazard);outline-offset:2px}
 button:disabled{opacity:.4;cursor:default}
 button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:transparent}
 .stage{display:flex;justify-content:center}
-.yard{position:relative;border-radius:6px;
-  background:
-   repeating-linear-gradient(45deg,transparent 0 5px,var(--steel) 5px 6.5px),
-   repeating-linear-gradient(-45deg,transparent 0 5px,var(--steel) 5px 6.5px),
-   var(--steel-2);
-  box-shadow:inset 0 0 0 2px var(--steel-2)}
-.board{position:absolute;background:var(--ground-2);touch-action:none;overflow:visible;
-  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-  background-size:var(--cell) var(--cell);background-position:-1px -1px}
-.post{position:absolute;width:calc(var(--f) * .9);height:calc(var(--f) * .9);border-radius:50%;
-  background:var(--steel-2);box-shadow:inset 0 0 0 2px var(--steel)}
-.gate{position:absolute;display:flex;align-items:center;justify-content:center;background:var(--gc);
-  box-shadow:inset 0 0 0 2px rgba(0,0,0,.18)}
-.gate::before{content:"";position:absolute;inset:0;opacity:.35;
-  background:repeating-linear-gradient(var(--chev),transparent 0 6px,rgba(255,255,255,.9) 6px 9px)}
+.yard{position:relative;border-radius:10px;background:var(--steel-2)}
+.board{position:absolute;background:var(--ground-2);touch-action:none;overflow:visible;border-radius:4px}
+.post{display:none}
+.gate{position:absolute;display:flex;align-items:center;justify-content:center;background:var(--gc)}
 .gate svg{position:relative;width:calc(var(--f) * .6);height:calc(var(--f) * .6);fill:#fff}
-.wall{position:absolute;border-radius:4px;
-  background:repeating-linear-gradient(45deg,var(--hazard) 0 8px,var(--hazard-ink) 8px 16px);
-  box-shadow:inset 0 0 0 3px var(--ground-2),inset 0 0 0 5px var(--hazard-ink)}
-.crate{position:absolute;left:0;top:0;box-sizing:border-box;border-radius:6px;cursor:grab;touch-action:none;
-  background:
-   repeating-linear-gradient(0deg,transparent 0 calc(var(--cell)/3 - 2px),rgba(0,0,0,.13) calc(var(--cell)/3 - 2px) calc(var(--cell)/3)),
-   var(--cc);
-  box-shadow:inset 0 0 0 3px rgba(0,0,0,.22),inset 0 0 0 5px rgba(255,255,255,.18),0 3px 0 rgba(0,0,0,.25);
+.wall{position:absolute;box-sizing:border-box;border:3px solid transparent;border-radius:9px;background:var(--steel-2);background-clip:padding-box}
+.crate{position:absolute;left:0;top:0;box-sizing:border-box;border-radius:8px;cursor:grab;touch-action:none;
+  background:var(--cc);box-shadow:0 2px 0 rgba(0,0,0,.22);
   display:flex;align-items:center;justify-content:center;
   transition:transform 90ms ease-out,opacity 260ms ease-in}
 .crate svg{width:min(34%,calc(var(--cell) * .38));height:auto;fill:rgba(255,255,255,.92);filter:drop-shadow(0 1px 0 rgba(0,0,0,.3));pointer-events:none}
-.crate.held{cursor:grabbing;z-index:5;box-shadow:inset 0 0 0 3px rgba(0,0,0,.22),inset 0 0 0 5px rgba(255,255,255,.3),0 6px 10px rgba(0,0,0,.3)}
+.crate.held{cursor:grabbing;z-index:5;box-shadow:0 6px 12px rgba(0,0,0,.28)}
 .crate.bump{animation:bump 160ms}
 @keyframes bump{50%{filter:brightness(1.25)}}
 .crate.leaving{transition:transform 280ms ease-in,opacity 280ms ease-in;opacity:0}
@@ -92,13 +76,12 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
 .crate .ar{position:absolute;width:calc(var(--cell)*.2);height:calc(var(--cell)*.2);fill:rgba(255,255,255,.8);pointer-events:none}
 .crate.lock-h .ar{top:50%;margin-top:calc(var(--cell)*-.1)}.crate.lock-h .a1{left:7%}.crate.lock-h .a2{right:7%}
 .crate.lock-v .ar{left:50%;margin-left:calc(var(--cell)*-.1)}.crate.lock-v .a1{top:7%}.crate.lock-v .a2{bottom:7%}
-.crate.lock-h{background:repeating-linear-gradient(90deg,transparent 0 calc(var(--cell)/3 - 2px),rgba(0,0,0,.13) calc(var(--cell)/3 - 2px) calc(var(--cell)/3)),var(--cc)}
 .stat b.star{color:var(--hazard)}
 .win .btns{display:flex;gap:8px}
 /* Padlocks: hatched crate + a padlock badge in the key color; it opens once that color has left the yard */
 .crate.locked{cursor:not-allowed}
-.crate.locked::after{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;
-  background:repeating-linear-gradient(45deg,rgba(0,0,0,.24) 0 4px,transparent 4px 10px)}
+.crate.locked::after{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;
+  background:color-mix(in srgb,var(--ground-2) 50%,transparent)}
 .crate .pad{position:absolute;top:calc(var(--cell)*-.12);right:calc(var(--cell)*-.1);z-index:1;
   width:calc(var(--cell)*.46);height:calc(var(--cell)*.5);pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));
   transition:transform 220ms ease-in,opacity 220ms ease-in}
@@ -116,7 +99,7 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
 .gen p{margin:0;color:var(--muted);font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
 .bar{height:12px;border-radius:6px;background:var(--ground);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
 .bar i{display:block;height:100%;width:0;border-radius:6px;transition:width 200ms linear;
-  background:repeating-linear-gradient(45deg,var(--hazard) 0 8px,color-mix(in srgb,var(--hazard) 70%,var(--hazard-ink)) 8px 16px)}
+  background:var(--hazard)}
 .win .lvup{color:var(--ink);font-weight:700}
 </style>
 
@@ -140,7 +123,7 @@ button.primary{background:var(--hazard);color:var(--hazard-ink);border-color:tra
   </div>
   <div class="stage" id="stage"><div class="yard" id="yard"><div class="board" id="board"></div></div>
     <div class="gen" id="gen" hidden><h2 id="genTitle">Building yard</h2><div class="bar"><i id="genBar"></i></div><p id="genText">Laying out the lot…</p></div></div>
-  <p class="hint">Drag a crate to slide it. Crates with arrows run on rails and only move along that line. Hatched crates are padlocked: they stay put until every crate of the padlock's color has left the yard. When a crate sits fully inside the opening of its own color's gate, it is pulled out. Every yard is freshly generated and checked solvable; par is the fewest moves the solver found (one move is one drag). Every 5 cleared yards the next level gets bigger and trickier.</p>
+  <p class="hint">Drag a crate to slide it. Crates with arrows run on rails and only move along that line. Faded crates with a padlock are locked: they stay put until every crate of the padlock's color has left the yard. When a crate sits fully inside the opening of its own color's gate, it is pulled out. Every yard is freshly generated and checked solvable; par is the fewest moves the solver found (one move is one drag). Every 5 cleared yards the next level gets bigger and trickier.</p>
 </div>
 
 <script src="engine.js"></script>
