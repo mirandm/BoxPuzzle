@@ -19,7 +19,7 @@ dragged cell by cell until blocked.
 - 6 colors, chosen for maximum distinctness (also under red-green color blindness): r=red-orange,
   b=sky blue, y=yellow (dark glyph), g=green, p=indigo, t=pink (id kept from "teal"). Each has a shape glyph.
   Padlocked crates keep their exact color (white inner ring + badge), so colors never shift.
-- Walls = plain dark blocked cells. Flat look: no grid lines, stripes or hatching on the board.
+- Walls = plain dark blocked cells. Calm look: no grid lines, stripes or hatching; light 3D only (crate highlight + darker bottom edge + shadow, raised fence and walls, sunken board).
 - One drag = one move. Undo, restart, move counter, best per yard.
 - Progress in localStorage, prefix "crate2-".
 
